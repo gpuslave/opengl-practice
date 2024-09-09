@@ -1,130 +1,150 @@
 ﻿#include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
+#include <cstdlib>
+#include <ctime>
 #include <iostream>
 #include <tuple>
 #include <utility>
 #include <variant>
 
 using namespace std;
-static int windowX;
-static int windowY;
 
-static std::tuple<double,double>* coords[2];
+static int windowX = 800;
+static int windowY = 600;
+static GLfloat currentColor[3] = {1.0f, 1.0f, 1.0f};
 
-void windowCoordsToVertex(double& x, double& y)
-{
-	float xHalf = windowX / 2.;
-	float yHalf = windowY / 2.;
-	x -= xHalf;
-	y -= yHalf;
-	y *= -1;
-	x /= xHalf;
-	y /= yHalf;
-}
-void drawLine(GLFWwindow* window)
-{
-//	glClear(GL_COLOR_BUFFER_BIT);
-	//glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+static std::tuple<double, double>* coords[2];
 
-		glfwSwapBuffers(window);
-	glBegin(GL_LINES);
-	for (const tuple<double, double>* pair : coords)
-	{
-		glVertex2f(std::get<0>(*pair), std::get<1>(*pair));
-	}
-	glEnd();
-//	glfwSwapBuffers(window);
-		glfwSwapBuffers(window);
+void windowCoordsToVertex(double& x, double& y);
 
-	for (int i = 0; i < 2; ++i)
-	{
-		delete coords[i];
-		coords[i] = nullptr;
-	}
-}
+void drawLine(GLFWwindow* window);
 
-void setCoordinate(const double& x, const double& y, GLFWwindow* window)
-{
-//	bool areCoordsFilled = false;
+void setCoordinate(const double& x, const double& y, GLFWwindow* window);
 
-	for (int i = 0; i < 2; ++i)
-	{
-		if (coords[i] == nullptr)
-		{
-			//tuple<double, double> aboba;	
-			coords[i] = new tuple<double,double> (x, y);
-			if (i != 1)
-			{
-				return;
-			}
-		}
-	}
-
-	drawLine(window);
-}
-
-
-
-// Drawing the primitive
-//void renderPrimitives();
-// Handle user input
-//void processInput(GLFWwindow* window);
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 
-int main()
-{
-	for (int i = 0 ;i<2;++i)
-	{
-		coords[i] = nullptr;
-	}
+void key_callback(GLFWwindow* window, int key, int scancode, int action,
+                  int mods);
 
-	// Initialize GLFW
-	if (!glfwInit()) {
-		std::cerr << "Не удалось инициализировать GLFW" << std::endl;
-		return -1;
-	}
+int main() {
+  srand(time(nullptr));
+  glColor3f(1.0, 1.0, 1.0);
+  for (int i = 0; i < 2; ++i) {
+    coords[i] = nullptr;
+  }
 
-	// Create a GLFW window
-	windowX = 800;
-	windowY = 600;
-	GLFWwindow* window = glfwCreateWindow(windowX, windowY, "Test OpenGL", nullptr, nullptr);
-	if (!window) {
-		std::cerr << "Не удалось создать окно GLFW" << std::endl;
-		glfwTerminate();
-		return -1;
-	}
-//	glfwSwapInterval(1);
-	glfwMakeContextCurrent(window);
+  // Initialize GLFW
+  if (!glfwInit()) {
+    std::cerr << "Не удалось инициализировать GLFW" << std::endl;
+    return -1;
+  }
 
-	// Button mouse callback
-	glfwSetMouseButtonCallback(window, mouseButtonCallback);
+  // Create GLFW window
+  GLFWwindow* window =
+      glfwCreateWindow(windowX, windowY, "Test OpenGL", nullptr, nullptr);
+  if (!window) {
+    std::cerr << "Не удалось создать окно GLFW" << std::endl;
+    glfwTerminate();
+    return -1;
+  }
 
-	// Main loop
-	while (!glfwWindowShouldClose(window)) {
-		// Input processing
-	//	processInput(window);
-		// Drawing the primitive
-	//	renderPrimitives();
+  glfwMakeContextCurrent(window);
+  glfwSwapInterval(0);
 
-		// Window update
-		glfwPollEvents();
-	}
+  // Callbacks
+  glfwSetMouseButtonCallback(window, mouseButtonCallback);
+  glfwSetKeyCallback(window, key_callback);
 
-	// Destroying a window and freeing resources
-	glfwDestroyWindow(window);
-	glfwTerminate();
-	return 0;
+  // Background color
+  glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
+  glfwSwapBuffers(window);  // If something breaks - this line is the reason >_<
+
+  // Main loop
+  while (!glfwWindowShouldClose(window)) {
+    // Window update
+
+    // glfwWaitEvents() --- It puts the thread to sleep until at least one event
+    // has been received and then processes all received events. This saves a
+    // great deal of CPU cycles and is useful for, for example, editing tools.
+    glfwWaitEvents();
+
+     //glfwPollEvents(); 
+  }
+
+  // Destroying a window and freeing resources
+  glfwDestroyWindow(window);
+  glfwMakeContextCurrent(nullptr);
+  glfwTerminate();
+
+  return 0;
 }
 
-void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
-{
-	if (action != 1)
-	{
-		return;
-	}
-	double x, y;
-	glfwGetCursorPos(window, &x, &y);
-	windowCoordsToVertex(x, y);
-	setCoordinate(x, y,window);
+void windowCoordsToVertex(double& x, double& y) {
+  double xHalf = windowX / 2.;
+  double yHalf = windowY / 2.;
+  x -= xHalf;
+  y -= yHalf;
+  y *= -1;
+  x /= xHalf;
+  y /= yHalf;
 }
 
+void drawLine(GLFWwindow* window) {
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  glfwSwapBuffers(window);
+
+  glBegin(GL_LINES);
+  glColor3f(currentColor[0], currentColor[1], currentColor[2]);
+  for (const tuple<double, double>* pair : coords) {
+    glVertex2d(std::get<0>(*pair), std::get<1>(*pair));
+  }
+  glEnd();
+
+  glfwSwapBuffers(window);
+
+  for (int i = 0; i < 2; ++i) {
+    delete coords[i];
+    coords[i] = nullptr;
+  }
+}
+
+void setCoordinate(const double& x, const double& y, GLFWwindow* window) {
+  for (int i = 0; i < 2; ++i) {
+    if (coords[i] == nullptr) {
+      coords[i] = new tuple<double, double>(x, y);
+      if (i != 1) {
+        return;
+      }
+    }
+  }
+
+  drawLine(window);
+}
+
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+  if (action != 1) {
+    return;
+  }
+
+  double x(0.0), y(0.0);
+
+  glfwGetCursorPos(window, &x, &y);
+  windowCoordsToVertex(x, y);
+  setCoordinate(x, y, window);
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action,
+                  int mods) {
+  // Pressing "c" changes the color of the next drawn line (actually variable
+  // currentColor)
+  if (key == GLFW_KEY_C && action == GLFW_PRESS) {
+    currentColor[0] = float(rand() % 101) / 100;
+    currentColor[1] = float(rand() % 101) / 100;
+    currentColor[2] = float(rand() % 101) / 100;
+    cout << "Color: " << currentColor[0] * 255 << " " << currentColor[1] * 255
+         << " " << currentColor[2] * 255 << endl;
+  }
+}
